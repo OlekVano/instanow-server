@@ -1,4 +1,4 @@
-import { verifyToken } from './firebase-functions'
+import { verifyToken } from './firebase-functions.js'
 
 export async function checkAccessToken(req, res) {
   if (!await verifyToken(req)) res.status(401).send()

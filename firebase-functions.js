@@ -1,5 +1,5 @@
-import * as admin from 'firebase-admin'
-const serviceAccount = require('./minecodia-firebase-adminsdk.json')
+import admin from 'firebase-admin'
+import serviceAccount from './minecodia-firebase-adminsdk.json' assert {type: 'json'}
 
 const app = admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)

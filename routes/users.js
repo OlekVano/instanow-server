@@ -1,4 +1,4 @@
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
 router.get('/:userId', (req, res) => {
@@ -6,4 +6,4 @@ router.get('/:userId', (req, res) => {
   res.send(userId)
 })
 
-module.exports = router
+export default router
