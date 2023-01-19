@@ -5,7 +5,7 @@ app.use(cors())
 app.use(express.json())
 
 import usersRouter from './routes/users.js'
-import { checkAccessToken } from './utils.js'
+import { isAuthenticated } from './utils.js'
 
 const corsOptions = {
   //origin: 'http://localhost:3000',
@@ -16,7 +16,7 @@ app.get('/test', cors(corsOptions), (req, res) => {
   res.send('asdf')
 })
 
-app.use('/users', checkAccessToken, usersRouter)
+app.use('/users', isAuthenticated, usersRouter)
 
 const port = process.env.PORT || 3001
 app.listen(port, async () => {
