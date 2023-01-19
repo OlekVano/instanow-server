@@ -20,4 +20,22 @@ router.get('/:userId', async (req, res) => {
   }
 })
 
+router.post('/:userId', async (req, res) => {
+  console.log('POST')
+  const { userId } = req.params
+  if (!isOwner(req, userId)) res.status(403).send()
+
+  const keys = Object.keys(req.body)
+
+  if (!keys.every(key => userKeys.includes(key))) {
+    res.status(400).send()
+    return
+  }
+
+  const payload = await app.auth().verifyIdToken(getToken(req))
+  await users.doc(payload.uid).set(req.body, { merge: true })
+
+  res.status(200).send()
+})
+
 export default router
