@@ -1,17 +1,26 @@
 import admin from 'firebase-admin'
 import serviceAccount from './minecodia-firebase-adminsdk.json' assert {type: 'json'}
 
-const app = admin.initializeApp({
+export const app = admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://minecodia.firebaseio.com'
 })
 
-const db = admin.firestore()
+const db = app.firestore()
 export const users = db.collection('users')
 
-function getToken(req) {
+export function getToken(req) {
   if (!req.headers.authorization) return undefined
   return req.headers.authorization.replace(/^Bearer\s/, '')
+}
+
+export async function verifyAccessToken(token) {
+  try {
+    const payload = await admin.auth().verifyIdToken(token)
+    return payload !== null
+  } catch {
+    return false
+  }
 }
 
 export async function verifyToken(req) {
@@ -19,8 +28,7 @@ export async function verifyToken(req) {
     const token = getToken(req)
     if (!token) return false
 
-    const payload = await admin.auth().verifyIdToken(token)
-    return payload !== null
+    return verifyAccessToken(token)
     
   } catch (err) {
     return false
