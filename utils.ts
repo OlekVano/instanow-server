@@ -10,15 +10,18 @@ export async function isAuthenticated(req: Request, res: Response, next: Functio
 export async function isOwner(req: Request, userId: string): Promise<boolean> {
   const token: string | undefined = getToken(req)
   if (!token) return false
-  const payload = await app.auth().verifyIdToken(token as string)
+  const payload = await app.auth().verifyIdToken(token)
+  console.log('isOwner')
+  console.log(payload)
+  console.log(payload.uid)
   return payload.uid == userId
 }
 
 export async function getUserById(id: string): Promise<User | undefined> {
-  const snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData> = await users.where('id', '==', id).get();
-  if (snapshot.empty) return undefined
-
-  const result: User[] = []
-  snapshot.forEach(doc => result.push(doc.data() as User));
-  return result[0]
+  const doc = await users.doc(id).get()
+  console.log(doc)
+  if (!doc.exists) return undefined
+  const data = doc.data()
+  console.log(data)
+  return data as User
 }

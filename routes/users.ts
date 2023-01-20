@@ -22,7 +22,7 @@ router.get('/:userId', async (req: Request<{userId: string}>, res: Response) => 
 
 router.post('/:userId', async (req: Request<{userId: string}>, res: Response) => {
   const { userId } = req.params
-  if (!isOwner(req, userId)) res.status(403).send()
+  if (!await isOwner(req, userId)) res.status(403).send()
 
   const keys = Object.keys(req.body)
 
