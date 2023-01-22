@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
-import { getToken, verifyToken, users, app } from './firebase-setup'
+import { storageBucketPath } from './consts'
+import { getToken, verifyToken, users, app, bucket } from './firebase-setup'
 import { User } from './types'
 
 export async function isAuthenticated(req: Request, res: Response, next: Function) {
@@ -21,4 +22,13 @@ export async function getUserById(id: string): Promise<User | undefined> {
 
   const data = doc.data()
   return data as User
+}
+
+export async function getDefaultSkins() {
+  return (await bucket.getFiles({prefix: 'default-skins/'}))
+    .flat()
+    // Remove the folder file
+    .filter(e => e.name !== 'default-skins/')
+    //                                             Replace all / with %2F 
+    .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
 }
