@@ -32,3 +32,12 @@ export async function getDefaultSkins() {
     //                                             Replace all / with %2F 
     .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
 }
+
+export async function getDefaultBackgrounds() {
+  return (await bucket.getFiles({prefix: 'default-backgrounds/'}))
+  .flat()
+  // Remove the folder file
+  .filter(e => e.name !== 'default-backgrounds/')
+  //                                             Replace all / with %2F 
+  .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
+}
