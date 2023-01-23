@@ -6,6 +6,7 @@ app.use(express.json())
 
 import usersRouter from './routes/users'
 import skinsRouter from './routes/skins'
+import backgroundsRouter from './routes/backgrounds'
 import { isAuthenticated } from './utils'
 
 const corsOptions = {
@@ -19,6 +20,7 @@ app.get('/test', cors(corsOptions), (_req: Request, res: Response) => {
 
 app.use('/users', isAuthenticated, usersRouter)
 app.use('/skins', skinsRouter)
+app.use('/backgrounds', backgroundsRouter)
 
 const port = process.env.PORT || 3001
 app.listen(port, async () => {
