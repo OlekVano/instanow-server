@@ -7,6 +7,7 @@ app.use(express.json({limit: '10mb'}))
 import usersRouter from './routes/users'
 import skinsRouter from './routes/skins'
 import backgroundsRouter from './routes/backgrounds'
+import postsRouter from './routes/posts'
 import { isAuthenticated } from './utils'
 
 const corsOptions = {
@@ -21,6 +22,7 @@ app.get('/test', cors(corsOptions), (_req: Request, res: Response) => {
 app.use('/users', isAuthenticated, usersRouter)
 app.use('/skins', skinsRouter)
 app.use('/backgrounds', backgroundsRouter)
+app.use('/posts', isAuthenticated, postsRouter)
 
 const port = process.env.PORT || 3001
 app.listen(port, async () => {
