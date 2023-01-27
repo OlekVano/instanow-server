@@ -10,7 +10,7 @@ export const userKeys: (keyof User)[] = [
 export const postKeys: (keyof Post)[] = [
   'title',
   'image',
-  'content'
+  'content',
 ]
 
 //https://firebasestorage.googleapis.com/v0/b/{**BUCKET**}/o/{**PATH**}?alt=media

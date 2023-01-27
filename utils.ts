@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { storageBucketPath } from './consts'
-import { getToken, verifyToken, users, app, bucket } from './firebase-setup'
-import { User } from './types'
+import { getToken, verifyToken, users, app, bucket, posts } from './firebase-setup'
+import { Post, User } from './types'
 
 export async function isAuthenticated(req: Request, res: Response, next: Function) {
   if (!await verifyToken(req)) res.status(403).send()
@@ -22,6 +22,14 @@ export async function getUserById(id: string): Promise<User | undefined> {
 
   const data = doc.data()
   return data as User
+}
+
+export async function getPostById(id: string): Promise<Post | undefined> {
+  const doc = await posts.doc(id).get()
+  if (!doc.exists) return undefined
+
+  const data = doc.data()
+  return data as Post
 }
 
 export async function getDefaultSkins() {

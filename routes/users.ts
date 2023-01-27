@@ -9,11 +9,9 @@ router.get('/:userId', async (req: Request<{userId: string}>, res: Response) => 
   const { userId } = req.params
   try {
     const user: User | undefined = await getUserById(userId)
-    if (!user) {
-      res.status(404).send()
-      return
-    }
+    if (!user) res.status(404).send()
     else res.json(user)
+    
   } catch (err) {
     console.log(err)
     res.status(500).json({ message: err })

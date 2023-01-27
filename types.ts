@@ -8,5 +8,6 @@ export type User = {
 export type Post = {
   title: string,
   image: string,
-  content: string
+  content: string,
+  authorId: string
 }
