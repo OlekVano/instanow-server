@@ -4,3 +4,9 @@ export type User = {
   skin: string,
   background: string
 }
+
+export type Post = {
+  title: string,
+  image: string,
+  content: string
+}
