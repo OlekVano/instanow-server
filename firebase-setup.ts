@@ -16,6 +16,7 @@ export const app = admin.initializeApp({
 
 const db = app.firestore()
 export const users = db.collection('users')
+export const posts = db.collection('posts')
 
 const storage = getStorage()
 export const bucket = storage.bucket();
