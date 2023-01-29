@@ -9,5 +9,7 @@ export type Post = {
   title: string,
   image: string,
   content: string,
-  authorId: string
+  authorId: string,
+  likedByIds: string[],
+  nLikes: number
 }

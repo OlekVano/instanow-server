@@ -25,9 +25,11 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     const payload = await app.auth().verifyIdToken(token)
-    const post = await posts.add(Object.assign({authorId: payload.uid}, req.body))
-
-    console.log(post)
+    const post = await posts.add(Object.assign({
+      authorId: payload.uid,
+      likedByIds: [],
+      nLikes: 0
+    }, req.body))
 
     res.json({id: post.id})
   } catch (err) {
@@ -39,9 +41,13 @@ router.post('/', async (req: Request, res: Response) => {
 router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => {
   const { postId } = req.params
   try {
+    
     const post: Post | undefined = await getPostById(postId)
     if (!post) res.status(404).send()
-    else res.json(post)
+    else {
+      const { likedByIds, ...postWithoutLikedIds } = post as Post
+      res.json(postWithoutLikedIds)
+    }
 
   } catch (err) {
     console.log(err)
