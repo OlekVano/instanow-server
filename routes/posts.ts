@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import { postKeys } from '../consts'
 import { app, getToken, posts } from '../firebase-setup'
 import { Post } from '../types'
-import { getPostById } from '../utils'
+import { getPostById, uploadFile } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
@@ -23,6 +23,8 @@ router.post('/', async (req: Request, res: Response) => {
       res.status(400).send()
       return
     }
+
+    req.body.image = await uploadFile(req.body.image)
 
     const payload = await app.auth().verifyIdToken(token)
     const post = await posts.add(Object.assign({authorId: payload.uid}, req.body))

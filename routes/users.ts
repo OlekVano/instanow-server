@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express'
-import { isOwner, getUserById } from '../utils'
+import { isOwner, getUserById, uploadFile } from '../utils'
 import { userKeys } from '../consts'
 import { getToken, users, app } from '../firebase-setup'
 import { User } from '../types'
@@ -36,6 +36,9 @@ router.post('/:userId', async (req: Request<{userId: string}>, res: Response) =>
       res.status(400).send()
       return
     }
+
+    req.body.skin = await uploadFile(req.body.skin)
+    req.body.background = await uploadFile(req.body.background)
   
     const payload = await app.auth().verifyIdToken(token)
     await users.doc(payload.uid).set(req.body, { merge: true })
