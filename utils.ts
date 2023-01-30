@@ -3,6 +3,7 @@ import { storageBucketPath } from './consts'
 import { getToken, verifyToken, users, app, bucket, posts } from './firebase-setup'
 import { Post, User } from './types'
 import { v4 } from 'uuid'
+import { FieldValue } from 'firebase-admin/firestore'
 
 export async function isAuthenticated(req: Request, res: Response, next: Function) {
   if (!await verifyToken(req)) res.status(403).send()
@@ -61,4 +62,15 @@ export async function uploadFile(dataUrl: string): Promise<string> {
   const filename = `user-generated/${generateUniqueId()}.${ext}`
   await bucket.file(filename).save(buffer)
   return `${storageBucketPath}/o/${filename.replace(/\//g, '%2F')}?alt=media`
+}
+
+export async function likePost(postId: string, userId: string): Promise<boolean> {
+  const post = await getPostById(postId)
+  if (!post) return false
+  if (post.likedByIds.includes(userId)) return false
+  posts.doc(postId).update({
+    nLikes: FieldValue.increment(1),
+    likedByIds: FieldValue.arrayUnion(userId)
+  })
+  return true
 }
