@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { storageBucketPath } from './consts'
 import { getToken, verifyToken, users, app, bucket, posts } from './firebase-setup'
 import { Post, User } from './types'
+import { v4 } from 'uuid'
 
 export async function isAuthenticated(req: Request, res: Response, next: Function) {
   if (!await verifyToken(req)) res.status(403).send()
@@ -48,4 +49,16 @@ export async function getDefaultBackgrounds() {
   .filter(e => e.name !== 'default-backgrounds/')
   //                                             Replace all / with %2F 
   .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
+}
+
+export function generateUniqueId() {
+  return v4()
+}
+
+export async function uploadFile(dataUrl: string): Promise<string> {
+  const [, ext, data] = dataUrl.match(/^data:.+\/(.+);base64,(.*)$/) as string[]
+  const buffer = Buffer.from(data, 'base64')
+  const filename = `user-generated/${generateUniqueId()}.${ext}`
+  await bucket.file(filename).save(buffer)
+  return `${storageBucketPath}/o/${filename.replace(/\//g, '%2F')}?alt=media`
 }
