@@ -6,6 +6,8 @@ import { getPostById, likePost, uploadFile } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
+  console.log(req.body)
+
   try {
     const keys = Object.keys(req.body)
   
@@ -21,8 +23,8 @@ router.post('/', async (req: Request, res: Response) => {
       return
     }
 
-    req.body.image = await uploadFile(req.body.image)
-
+    if (req.body.image) req.body.image = await uploadFile(req.body.image)
+    
     const payload = await app.auth().verifyIdToken(token)
     const post = await posts.add(Object.assign({
       authorId: payload.uid,
