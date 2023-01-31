@@ -6,8 +6,6 @@ import { getPostById, likePost, uploadFile } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
-  console.log(req.body)
-
   try {
     const keys = Object.keys(req.body)
   
