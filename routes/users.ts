@@ -37,8 +37,8 @@ router.post('/:userId', async (req: Request<{userId: string}>, res: Response) =>
       return
     }
 
-    req.body.skin = await uploadFile(req.body.skin)
-    req.body.background = await uploadFile(req.body.background)
+    if (req.body.skin.startsWith('data')) req.body.skin = await uploadFile(req.body.skin)
+    if (req.body.background.startsWith('data')) req.body.background = await uploadFile(req.body.background)
   
     const payload = await app.auth().verifyIdToken(token)
     await users.doc(payload.uid).set(req.body, { merge: true })
