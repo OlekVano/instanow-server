@@ -1,3 +1,4 @@
 .env
 node_modules
 minecodia-firebase-adminsdk.json
+build
