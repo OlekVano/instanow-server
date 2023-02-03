@@ -17,6 +17,7 @@ export const app = admin.initializeApp({
 const db = app.firestore()
 export const users = db.collection('users')
 export const posts = db.collection('posts')
+export const likes = db.collection('likes')
 
 const storage = getStorage()
 export const bucket = storage.bucket();

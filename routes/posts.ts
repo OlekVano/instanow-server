@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express'
 import { postKeys } from '../consts'
-import { app, getToken, posts } from '../firebase-setup'
+import { app, getToken, likes, posts } from '../firebase-setup'
 import { Post } from '../types'
-import { getPostById, likePost, uploadFile } from '../utils'
+import { getLikes, getPostById, uploadFile } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
@@ -26,9 +26,9 @@ router.post('/', async (req: Request, res: Response) => {
     const payload = await app.auth().verifyIdToken(token)
     const post = await posts.add(Object.assign({
       authorId: payload.uid,
-      likedByIds: [],
-      nLikes: 0
     }, req.body))
+
+    await likes.doc(post.id).set({likedByIds: []})
 
     res.json({id: post.id})
   } catch (err) {
@@ -44,31 +44,15 @@ router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => 
     const post: Post | undefined = await getPostById(postId)
     if (!post) res.status(404).send()
     else {
-      const { likedByIds, ...postWithoutLikedIds } = post as Post
-      res.json(postWithoutLikedIds)
+      const likedByIds = await getLikes(postId) as string[]
+      res.json(Object.assign({
+        liked: likedByIds.includes(await (await app.auth().verifyIdToken(getToken(req) as string)).uid),
+        likes: likedByIds.length
+      }, post))
     }
 
   } catch (err) {
     console.log(err)
-    res.status(500).json({message: err})
-  }
-})
-
-router.post('/:postId/like', async (req: Request<{postId: string}>, res: Response) => {
-  const { postId } = req.params
-  
-  try {
-    const token = getToken(req)
-    if (!token) {
-      res.status(400).send()
-      return
-    }
-    const payload = await app.auth().verifyIdToken(token)
-    const userId = payload.uid
-
-    if (await likePost(postId, userId)) res.status(200).send()
-    else res.status(400).send()
-  } catch (err) {
     res.status(500).json({message: err})
   }
 })

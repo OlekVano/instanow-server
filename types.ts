@@ -10,6 +10,4 @@ export type Post = {
   image: string,
   content: string,
   authorId: string,
-  likedByIds: string[],
-  nLikes: number
 }

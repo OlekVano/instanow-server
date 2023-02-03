@@ -1,9 +1,8 @@
 import { Request, Response } from 'express'
 import { storageBucketPath } from './consts'
-import { getToken, verifyToken, users, app, bucket, posts } from './firebase-setup'
+import { getToken, verifyToken, users, app, bucket, posts, likes } from './firebase-setup'
 import { Post, User } from './types'
 import { v4 } from 'uuid'
-import { FieldValue } from 'firebase-admin/firestore'
 
 export async function isAuthenticated(req: Request, res: Response, next: Function) {
   if (!await verifyToken(req)) res.status(403).send()
@@ -18,20 +17,28 @@ export async function isOwner(req: Request, userId: string): Promise<boolean> {
   return payload.uid == userId
 }
 
-export async function getUserById(id: string): Promise<User | undefined> {
+export async function getUserDocById(id: string): Promise<FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData> | undefined> {
   const doc = await users.doc(id).get()
   if (!doc.exists) return undefined
+  return doc
+}
 
-  const data = doc.data()
-  return data as User
+export async function getUserById(id: string): Promise<User | undefined> {
+  const doc = await getUserDocById(id)
+  if (!doc) return undefined
+  return doc.data() as User
+}
+
+export async function getPostDocById(id: string): Promise<FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData> | undefined> {
+  const doc = await posts.doc(id).get()
+  if (!doc.exists) return undefined
+  return doc
 }
 
 export async function getPostById(id: string): Promise<Post | undefined> {
-  const doc = await posts.doc(id).get()
-  if (!doc.exists) return undefined
-
-  const data = doc.data()
-  return data as Post
+  const doc = await getPostDocById(id)
+  if (!doc) return undefined
+  return doc.data() as Post
 }
 
 export async function getDefaultSkins() {
@@ -64,13 +71,14 @@ export async function uploadFile(dataUrl: string): Promise<string> {
   return `${storageBucketPath}/o/${filename.replace(/\//g, '%2F')}?alt=media`
 }
 
-export async function likePost(postId: string, userId: string): Promise<boolean> {
-  const post = await getPostById(postId)
-  if (!post) return false
-  if (post.likedByIds.includes(userId)) return false
-  posts.doc(postId).update({
-    nLikes: FieldValue.increment(1),
-    likedByIds: FieldValue.arrayUnion(userId)
-  })
-  return true
+export async function getLikesDoc(id: string) {
+  const doc = await likes.doc(id).get()
+  if (!doc.exists) return undefined
+  return doc
+}
+
+export async function getLikes(id: string): Promise<string[] | undefined> {
+  const doc = await getLikesDoc(id)
+  if (!doc) return undefined
+  return (doc.data() as {likedByIds: string[]}).likedByIds
 }
