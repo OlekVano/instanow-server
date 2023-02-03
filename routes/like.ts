@@ -22,6 +22,11 @@ router.post('/:id', async (req: Request<{id: string}>, res: Response) => {
         likedByIds: FieldValue.arrayUnion(userId)
       })
     }
+    else {
+      likes.doc(id).update({
+        likedByIds: FieldValue.arrayRemove(userId)
+      })
+    }
 
     res.status(200).send()
   } catch (err) {
