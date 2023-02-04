@@ -18,13 +18,13 @@ router.post('/:id', async (req: Request<{id: string}>, res: Response) => {
     const userId = (await app.auth().verifyIdToken(getToken(req) as string)).uid
 
     if (likedByIds.includes(userId)) {
-      likes.doc(id).update({
-        likedByIds: FieldValue.arrayUnion(userId)
+      await likes.doc(id).update({
+        likedByIds: FieldValue.arrayRemove(userId)
       })
     }
     else {
-      likes.doc(id).update({
-        likedByIds: FieldValue.arrayRemove(userId)
+      await likes.doc(id).update({
+        likedByIds: FieldValue.arrayUnion(userId)
       })
     }
 

@@ -8,6 +8,7 @@ import usersRouter from './routes/users'
 import skinsRouter from './routes/skins'
 import backgroundsRouter from './routes/backgrounds'
 import postsRouter from './routes/posts'
+import likeRouter from './routes/like'
 import { isAuthenticated } from './utils'
 
 const corsOptions = {
@@ -23,6 +24,7 @@ app.use('/users', isAuthenticated, usersRouter)
 app.use('/skins', skinsRouter)
 app.use('/backgrounds', backgroundsRouter)
 app.use('/posts', isAuthenticated, postsRouter)
+app.use('/like', isAuthenticated, likeRouter)
 
 const port = process.env.PORT || 3001
 app.listen(port, async () => {
