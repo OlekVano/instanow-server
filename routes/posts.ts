@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import { postKeys } from '../consts'
 import { app, getToken, likes, posts } from '../firebase-setup'
 import { Post } from '../types'
-import { getLikes, getPostById, uploadFile } from '../utils'
+import { getLikes, getPostById, getPosts, uploadFile } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
@@ -51,6 +51,15 @@ router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => 
       }, post))
     }
 
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({message: err})
+  }
+})
+
+router.get('/', async (_req: Request, res: Response) => {
+  try {
+    res.json(await getPosts())
   } catch (err) {
     console.log(err)
     res.status(500).json({message: err})

@@ -82,3 +82,8 @@ export async function getLikes(id: string): Promise<string[] | undefined> {
   if (!doc) return undefined
   return (doc.data() as {likedByIds: string[]}).likedByIds
 }
+
+export async function getPosts(): Promise<(Post & {id: string})[]> {
+  const res = await posts.get()
+  return res.docs.map(doc => Object.assign({id: doc.id}, doc.data() as Post))
+}
