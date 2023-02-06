@@ -66,10 +66,8 @@ router.get('/', async (req: Request, res: Response) => {
         liked: likedByIds.includes(await (await app.auth().verifyIdToken(getToken(req) as string)).uid),
         likes: likedByIds.length
       }, post)
-      // console.log(postWithLikes)
       return postWithLikes
     }))
-    console.log(postsWithLikes)
     res.json(postsWithLikes)
   } catch (err) {
     console.log(err)
