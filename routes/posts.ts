@@ -57,9 +57,20 @@ router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => 
   }
 })
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    res.json(await getPosts())
+    const posts = await getPosts()
+    const postsWithLikes = await Promise.all(posts.map(async (post) => {
+      const likedByIds = await getLikes(post.id) as string[]
+      const postWithLikes = Object.assign({
+        liked: likedByIds.includes(await (await app.auth().verifyIdToken(getToken(req) as string)).uid),
+        likes: likedByIds.length
+      }, post)
+      // console.log(postWithLikes)
+      return postWithLikes
+    }))
+    console.log(postsWithLikes)
+    res.json(postsWithLikes)
   } catch (err) {
     console.log(err)
     res.status(500).json({message: err})
