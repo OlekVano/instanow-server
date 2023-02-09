@@ -1,13 +1,13 @@
-import { Post, User } from './types'
+import { Post, Profile } from './types'
 
-export const userKeys: (keyof User)[] = [
+export const requiredProfileKeys: (keyof Profile)[] = [
   'nickname',
   'description',
   'skin',
   'background'
 ]
 
-export const postKeys: (keyof Post)[] = [
+export const requiredPostKeys: (keyof Post)[] = [
   'title',
   'image',
   'content',

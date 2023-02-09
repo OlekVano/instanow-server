@@ -4,12 +4,10 @@ import cors from 'cors'
 app.use(cors())
 app.use(express.json({limit: '10mb'}))
 
-import usersRouter from './routes/users'
-import skinsRouter from './routes/skins'
-import backgroundsRouter from './routes/backgrounds'
+import profilesRouter from './routes/profiles'
+import defaultRouter from './routes/default'
 import postsRouter from './routes/posts'
 import likeRouter from './routes/like'
-import { isAuthenticated } from './utils'
 
 const corsOptions = {
   //origin: 'http://localhost:3000',
@@ -20,11 +18,10 @@ app.get('/test', cors(corsOptions), (_req: Request, res: Response) => {
   res.send('asdf')
 })
 
-app.use('/users', isAuthenticated, usersRouter)
-app.use('/skins', skinsRouter)
-app.use('/backgrounds', backgroundsRouter)
-app.use('/posts', isAuthenticated, postsRouter)
-app.use('/like', isAuthenticated, likeRouter)
+app.use('/profiles', profilesRouter)
+app.use('/default', defaultRouter)
+app.use('/posts', postsRouter)
+app.use('/like', likeRouter)
 
 const port = process.env.PORT || 3001
 app.listen(port, async () => {

@@ -1,36 +1,30 @@
-import express, { Request, Response } from 'express'
-import { postKeys } from '../consts'
-import { app, getToken, likes, posts } from '../firebase-setup'
+import express, { Request, Response } from 'express' 
+import { requiredPostKeys } from '../consts'
+import { createLikes, createPost } from '../firebase-access'
 import { Post } from '../types'
-import { getLikes, getPostById, getPosts, uploadFile } from '../utils'
+import { addLikesToDict, getPostById, getPosts, requireAuthorization, uploadDataURL } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
+  const userId = await requireAuthorization(req, res)
+
   try {
     const keys = Object.keys(req.body)
   
-    if (!keys.every(key => (postKeys as string[]).includes(key))) {
+    if (!keys.every(key => (requiredPostKeys as string[]).includes(key))) {
       res.status(400).send()
       return
     }
 
-    const token = getToken(req)
-  
-    if (!token) {
-      res.status(400).send()
-      return
-    }
-
-    if (req.body.image) req.body.image = await uploadFile(req.body.image)
+    if (req.body.image) req.body.image = await uploadDataURL(req.body.image)
     
-    const payload = await app.auth().verifyIdToken(token)
-    const post = await posts.add(Object.assign({
-      authorId: payload.uid,
+    const postId = await createPost(Object.assign({
+      authorId: userId,
     }, req.body))
 
-    await likes.doc(post.id).set({likedByIds: []})
+    await createLikes(postId)
 
-    res.json({id: post.id})
+    res.json({id: postId})
   } catch (err) {
     console.log(err)
     res.status(500).json({message: err})
@@ -39,16 +33,16 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => {
   const { postId } = req.params
+
   try {
-    
+    const userId = await requireAuthorization(req, res)
+    if (!userId) return
+
     const post: Post | undefined = await getPostById(postId)
     if (!post) res.status(404).send()
     else {
-      const likedByIds = await getLikes(postId) as string[]
-      res.json(Object.assign({
-        liked: likedByIds.includes(await (await app.auth().verifyIdToken(getToken(req) as string)).uid),
-        likes: likedByIds.length
-      }, post))
+      await addLikesToDict(post, userId)
+      res.json(post)
     }
 
   } catch (err) {
@@ -59,16 +53,18 @@ router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => 
 
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const userId = await requireAuthorization(req, res)
+    if (!userId) return
+
     const posts = await getPosts()
-    const postsWithLikes = await Promise.all(posts.map(async (post) => {
-      const likedByIds = await getLikes(post.id) as string[]
-      const postWithLikes = Object.assign({
-        liked: likedByIds.includes(await (await app.auth().verifyIdToken(getToken(req) as string)).uid),
-        likes: likedByIds.length
-      }, post)
-      return postWithLikes
-    }))
+    const postsWithLikes = await Promise.all(posts.map(addLikesToPost))
     res.json(postsWithLikes)
+
+    // ***************************
+
+    async function addLikesToPost(post: Post) {
+      return await addLikesToDict(post, userId as string)
+    }
   } catch (err) {
     console.log(err)
     res.status(500).json({message: err})

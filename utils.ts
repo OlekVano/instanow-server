@@ -1,89 +1,71 @@
 import { Request, Response } from 'express'
-import { storageBucketPath } from './consts'
-import { getToken, verifyToken, users, app, bucket, posts, likes } from './firebase-setup'
-import { Post, User } from './types'
-import { v4 } from 'uuid'
+import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
+import { getUserIdFromToken, getProfileDocById, getPostDocById, uploadFile, getTokenFromReq, getLikesDocById, getPostDocs } from './firebase-access'
+import { DictWithId, DictWithIdAndLikes, Post, Profile } from './types'
 
-export async function isAuthenticated(req: Request, res: Response, next: Function) {
-  if (!await verifyToken(req)) res.status(403).send()
-  else next()
+export async function validateToken(token: string): Promise<boolean> {
+  return Boolean(await getUserIdFromToken(token))
 }
 
-export async function isOwner(req: Request, userId: string): Promise<boolean> {
-  const token: string | undefined = getToken(req)
-  if (!token) return false
-  
-  const payload = await app.auth().verifyIdToken(token)
-  return payload.uid == userId
+export function addIdToDict(dict: {[key: string]: any}, id: string) {
+  dict.id = id
+  return dict
 }
 
-export async function getUserDocById(id: string): Promise<FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData> | undefined> {
-  const doc = await users.doc(id).get()
-  if (!doc.exists) return undefined
-  return doc
-}
-
-export async function getUserById(id: string): Promise<User | undefined> {
-  const doc = await getUserDocById(id)
+export async function getProfileById(id: string): Promise<Profile | undefined> {
+  const doc = await getProfileDocById(id)
   if (!doc) return undefined
-  return doc.data() as User
-}
-
-export async function getPostDocById(id: string): Promise<FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData> | undefined> {
-  const doc = await posts.doc(id).get()
-  if (!doc.exists) return undefined
-  return doc
+  return addIdToDict(doc.data() as Exclude<Profile, {id: string}>, id) as Profile
 }
 
 export async function getPostById(id: string): Promise<Post | undefined> {
   const doc = await getPostDocById(id)
   if (!doc) return undefined
-  return doc.data() as Post
+  return addIdToDict(doc.data() as Exclude<Post, {id: string}>, id) as Post
 }
 
-export async function getDefaultSkins() {
-  return (await bucket.getFiles({prefix: 'default-skins/'}))
-    .flat()
-    // Remove the folder file
-    .filter(e => e.name !== 'default-skins/')
-    //                                             Replace all / with %2F 
-    .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
-}
-
-export async function getDefaultBackgrounds() {
-  return (await bucket.getFiles({prefix: 'default-backgrounds/'}))
-  .flat()
-  // Remove the folder file
-  .filter(e => e.name !== 'default-backgrounds/')
-  //                                             Replace all / with %2F 
-  .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
-}
-
-export function generateUniqueId() {
-  return v4()
-}
-
-export async function uploadFile(dataUrl: string): Promise<string> {
-  const [, ext, data] = dataUrl.match(/^data:.+\/(.+);base64,(.*)$/) as string[]
+export async function uploadDataURL(dataUrl: string): Promise<string> {
+  const [, extension, data] = dataUrl.match(/^data:.+\/(.+);base64,(.*)$/) as string[]
   const buffer = Buffer.from(data, 'base64')
-  const filename = `user-generated/${generateUniqueId()}.${ext}`
-  await bucket.file(filename).save(buffer)
-  return `${storageBucketPath}/o/${filename.replace(/\//g, '%2F')}?alt=media`
+  return await uploadFile(buffer, extension)
 }
 
-export async function getLikesDoc(id: string) {
-  const doc = await likes.doc(id).get()
-  if (!doc.exists) return undefined
-  return doc
+export async function requireAuthorization(req: Request, res: Response): Promise<string | undefined> {
+  const token = getTokenFromReq(req)
+  if (!token) {
+    res.status(401).send()
+    return undefined
+  }
+
+  const userId = await getUserIdFromToken(token)
+  if (!userId) {
+    res.status(401).send()
+    return undefined
+  }
+  
+  return userId
 }
 
-export async function getLikes(id: string): Promise<string[] | undefined> {
-  const doc = await getLikesDoc(id)
+export async function getLikesById(id: string): Promise<string[] | undefined> {
+  const doc = await getLikesDocById(id)
   if (!doc) return undefined
   return (doc.data() as {likedByIds: string[]}).likedByIds
 }
 
-export async function getPosts(): Promise<(Post & {id: string})[]> {
-  const res = await posts.get()
-  return res.docs.map(doc => Object.assign({id: doc.id}, doc.data() as Post))
+export async function getPosts(): Promise<Post[]> {
+  const postDocs = await getPostDocs()
+  return postDocs.map(getPostFromDoc)
+
+  // ***************************
+
+  function getPostFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Post {
+    return addIdToDict(doc.data() as Exclude<Post, {id: string}>, doc.id) as Post
+  }
+}
+
+export async function addLikesToDict(dict: DictWithId, userId: string): Promise<DictWithIdAndLikes> {
+  const likedByIds = await getLikesById(dict.id) as string[]
+  dict.likes = likedByIds.length
+  dict.liked = likedByIds.includes(userId)
+  return dict as DictWithIdAndLikes
 }
