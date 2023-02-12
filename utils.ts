@@ -69,3 +69,8 @@ export async function addLikesToDict(dict: DictWithId, userId: string): Promise<
   dict.liked = likedByIds.includes(userId)
   return dict as DictWithIdAndLikes
 }
+
+export async function addAuthorToPost(post: Post & {[key: string]: any}): Promise<Post & {author: Profile}> {
+  post.author = await getProfileById(post.authorId)
+  return post as Post & {author: Profile}
+}

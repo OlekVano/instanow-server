@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import { requiredPostKeys } from '../consts'
 import { createLikes, createPost } from '../firebase-access'
 import { Post } from '../types'
-import { addLikesToDict, getPostById, getPosts, requireAuthorization, uploadDataURL } from '../utils'
+import { addAuthorToPost, addLikesToDict, getPostById, getPosts, requireAuthorization, uploadDataURL } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
@@ -42,6 +42,7 @@ router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => 
     if (!post) res.status(404).send()
     else {
       await addLikesToDict(post, userId)
+      await addAuthorToPost(post)
       res.json(post)
     }
 
@@ -57,13 +58,15 @@ router.get('/', async (req: Request, res: Response) => {
     if (!userId) return
 
     const posts = await getPosts()
-    const postsWithLikes = await Promise.all(posts.map(addLikesToPost))
-    res.json(postsWithLikes)
+    const postsWithLikesAndAuthor = await Promise.all(posts.map(addLikesAndAuthor))
+    res.json(postsWithLikesAndAuthor)
 
     // ***************************
 
-    async function addLikesToPost(post: Post) {
-      return await addLikesToDict(post, userId as string)
+    async function addLikesAndAuthor(post: Post) {
+      await addLikesToDict(post, userId as string)
+      await addAuthorToPost(post)
+      return post
     }
   } catch (err) {
     console.log(err)
