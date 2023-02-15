@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express'
 import { requiredProfileKeys } from '../consts'
-import { updateProfile } from '../firebase-access'
+import { createLikes, getProfileDocById, updateProfile } from '../firebase-access'
 import { Profile } from '../types'
-import { getProfileById, requireAuthorization, uploadDataURL } from '../utils'
+import { addLikesToDict, getProfileById, requireAuthorization, uploadDataURL } from '../utils'
 
 const router = express.Router()
 
@@ -10,11 +10,15 @@ router.get('/:profileId', async (req: Request<{profileId: string}>, res: Respons
   const { profileId } = req.params
 
   try {
-    if (!await requireAuthorization(req, res)) return
+    const userId = await requireAuthorization(req, res)
+    if (!userId) return
 
     const user: Profile | undefined = await getProfileById(profileId)
     if (!user) res.status(404).send()
-    else res.json(user)
+    else {
+      await addLikesToDict(user, userId)
+      res.json(user)
+    }
     
   } catch (err) {
     console.log(err)
@@ -43,6 +47,10 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
     if (req.body.skin.startsWith('data')) req.body.skin = await uploadDataURL(req.body.skin)
     if (req.body.background.startsWith('data')) req.body.background = await uploadDataURL(req.body.background)
   
+    if (!await getProfileDocById(userId)) {
+      await createLikes(userId)
+    }
+
     await updateProfile(userId, req.body)
 
     res.status(200).send()
