@@ -53,6 +53,10 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
 
     await updateProfile(userId, req.body)
 
+    if (!await getProfileDocById(userId)) {
+      await createLikes(userId)
+    }
+
     res.status(200).send()
   } catch (err) {
     console.log(err)
