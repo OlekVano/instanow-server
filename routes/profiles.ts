@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express'
 import { requiredProfileKeys } from '../consts'
-import { updateProfile } from '../firebase-access'
+import { createLikes, getProfileDocById, updateProfile } from '../firebase-access'
 import { Profile } from '../types'
-import { getProfileById, requireAuthorization, uploadDataURL } from '../utils'
+import { addLikesToDict, getProfileById, requireAuthorization, uploadDataURL } from '../utils'
 
 const router = express.Router()
 
@@ -14,7 +14,10 @@ router.get('/:profileId', async (req: Request<{profileId: string}>, res: Respons
 
     const user: Profile | undefined = await getProfileById(profileId)
     if (!user) res.status(404).send()
-    else res.json(user)
+    else {
+      await addLikesToDict(user, user.id)
+      res.json(user)
+    }
     
   } catch (err) {
     console.log(err)
@@ -44,6 +47,10 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
     if (req.body.background.startsWith('data')) req.body.background = await uploadDataURL(req.body.background)
   
     await updateProfile(userId, req.body)
+
+    if (!await getProfileDocById(userId)) {
+      await createLikes(userId)
+    }
 
     res.status(200).send()
   } catch (err) {

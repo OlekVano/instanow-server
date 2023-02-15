@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
-import { getUserIdFromToken, getProfileDocById, getPostDocById, uploadFile, getTokenFromReq, getLikesDocById, getPostDocs } from './firebase-access'
+import { getUserIdFromToken, getProfileDocById, getPostDocById, uploadFile, getTokenFromReq, getLikesDocById, getPostDocs, createLikes } from './firebase-access'
 import { DictWithId, DictWithIdAndLikes, Post, Profile } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
@@ -64,9 +64,16 @@ export async function getPosts(): Promise<Post[]> {
 }
 
 export async function addLikesToDict(dict: DictWithId, userId: string): Promise<DictWithIdAndLikes> {
-  const likedByIds = await getLikesById(dict.id) as string[]
-  dict.likes = likedByIds.length
-  dict.liked = likedByIds.includes(userId)
+  const likedByIds = await getLikesById(dict.id)
+  if (!likedByIds) {
+    await createLikes(dict.id)
+    dict.likes = []
+    dict.liked = false
+  }
+  else {
+    dict.likes = likedByIds.length
+    dict.liked = likedByIds.includes(userId)
+  }
   return dict as DictWithIdAndLikes
 }
 
