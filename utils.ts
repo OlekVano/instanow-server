@@ -24,7 +24,6 @@ export async function getProfileById(id: string): Promise<Profile | undefined> {
 // }
 
 export async function uploadDataURL(dataUrl: string): Promise<string> {
-  console.log('dataurl', dataUrl)
   const [, extension, data] = dataUrl.match(/^data:.+\/(.+);base64,(.*)$/) as string[]
   const buffer = Buffer.from(data, 'base64')
   return await uploadFile(buffer, extension)

@@ -7,8 +7,6 @@ import { getProfileById, requireAuthorization, uploadDataURL } from '../utils'
 const router = express.Router()
 
 router.post('/:profileId', async (req: Request<{profileId: string}>, res: Response) => {
-  console.log(req.body)
-
   const { profileId } = req.params
 
   try {
@@ -24,8 +22,6 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
       res.status(400).send()
       return
     }
-
-    console.log('picture', req.body.profilePicture)
 
     // If new profile picture
     if (req.body.profilePicture.startsWith('data')) req.body.profilePicture = await uploadDataURL(req.body.profilePicture)
