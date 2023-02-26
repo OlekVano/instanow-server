@@ -1,32 +1,14 @@
 import express, { Request, Response } from 'express'
 import { requiredProfileKeys } from '../consts'
-import { createLikes, getProfileDocById, updateProfile } from '../firebase-access'
+import { updateProfile } from '../firebase-access'
 import { Profile } from '../types'
-import { addLikesToDict, getProfileById, requireAuthorization, uploadDataURL } from '../utils'
+import { getProfileById, requireAuthorization, uploadDataURL } from '../utils'
 
 const router = express.Router()
 
-router.get('/:profileId', async (req: Request<{profileId: string}>, res: Response) => {
-  const { profileId } = req.params
-
-  try {
-    const userId = await requireAuthorization(req, res)
-    if (!userId) return
-
-    const user: Profile | undefined = await getProfileById(profileId)
-    if (!user) res.status(404).send()
-    else {
-      await addLikesToDict(user, userId)
-      res.json(user)
-    }
-    
-  } catch (err) {
-    console.log(err)
-    res.status(500).json({ message: err })
-  }
-})
-
 router.post('/:profileId', async (req: Request<{profileId: string}>, res: Response) => {
+  console.log(req.body)
+
   const { profileId } = req.params
 
   try {
@@ -43,21 +25,38 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
       return
     }
 
-    // If custom uploaded background or skin
-    if (req.body.skin.startsWith('data')) req.body.skin = await uploadDataURL(req.body.skin)
-    if (req.body.background.startsWith('data')) req.body.background = await uploadDataURL(req.body.background)
-  
-    if (!await getProfileDocById(userId)) {
-      await createLikes(userId)
+    console.log('picture', req.body.profilePicture)
+
+    // If new profile picture
+    if (req.body.profilePicture.startsWith('data')) req.body.profilePicture = await uploadDataURL(req.body.profilePicture)
+    
+    // If new profile
+    if (!await getProfileById(profileId)) {
+      req.body.followedBy = []
+      req.body.following = []
+      req.body.posts = []
     }
 
     await updateProfile(userId, req.body)
 
-    if (!await getProfileDocById(userId)) {
-      await createLikes(userId)
-    }
-
     res.status(200).send()
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: err })
+  }
+})
+
+router.get('/:profileId', async (req: Request<{profileId: string}>, res: Response) => {
+  const { profileId } = req.params
+
+  try {
+    const userId = await requireAuthorization(req, res)
+    if (!userId) return
+
+    const profile: Profile | undefined = await getProfileById(profileId)
+    if (!profile) res.status(404).send()
+    else res.json(profile)
+    
   } catch (err) {
     console.log(err)
     res.status(500).json({ message: err })

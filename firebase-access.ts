@@ -1,12 +1,9 @@
 import { Request } from 'express'
 import admin from 'firebase-admin'
 import { getStorage } from 'firebase-admin/storage'
-import { storageBucketPath } from './consts'
+import { DocumentSnapshot, DocumentData } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
-import { config } from 'dotenv'
-import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot, FieldValue } from 'firebase-admin/firestore'
-import { getLikesById } from './utils'
-config()
+import { storageBucketPath } from './consts'
 
 const app = admin.initializeApp({
   credential: admin.credential.cert({
@@ -14,17 +11,16 @@ const app = admin.initializeApp({
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
   }),
-  databaseURL: 'https://minecodia.firebaseio.com',
-  storageBucket: 'minecodia.appspot.com'
+  databaseURL: process.env.DB_URL,
+  storageBucket: process.env.STORAGE_BUCKET
 })
 
 const db = app.firestore()
 const users = db.collection('users')
-const posts = db.collection('posts')
-const likes = db.collection('likes')
+// const posts = db.collection('posts')
 
 const storage = getStorage()
-const bucket = storage.bucket();
+const bucket = storage.bucket()
 
 export function getTokenFromReq(req: Request): string | undefined {
   if (!req.headers.authorization) return undefined
@@ -47,29 +43,11 @@ export async function getProfileDocById(id: string): Promise<DocumentSnapshot<Do
   return doc
 }
 
-export async function getPostDocById(id: string): Promise<DocumentSnapshot<DocumentData> | undefined> {
-  const doc = await posts.doc(id).get()
-  if (!doc.exists) return undefined
-  return doc
-}
-
-export async function getDefaultSkins(): Promise<string[]> {
-  return (await bucket.getFiles({prefix: 'default-skins/'}))
-    .flat()
-    // Remove the folder file
-    .filter(e => e.name !== 'default-skins/')
-    //                                             Replace all / with %2F 
-    .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
-}
-
-export async function getDefaultBackgrounds(): Promise<string[]> {
-  return (await bucket.getFiles({prefix: 'default-backgrounds/'}))
-  .flat()
-  // Remove the folder file
-  .filter(e => e.name !== 'default-backgrounds/')
-  //                                             Replace all / with %2F 
-  .map(e => `${storageBucketPath}/o/${e.metadata.name.replace(/\//g, '%2F')}?alt=media`)
-}
+// export async function getPostDocById(id: string): Promise<DocumentSnapshot<DocumentData> | undefined> {
+//   const doc = await posts.doc(id).get()
+//   if (!doc.exists) return undefined
+//   return doc
+// }
 
 export function generateUniqueFileName(): string {
   return v4()
@@ -81,44 +59,16 @@ export async function uploadFile(buffer: Buffer, extension: string): Promise<str
   return `${storageBucketPath}/o/${filename.replace(/\//g, '%2F')}?alt=media`
 }
 
-export async function getLikesDocById(id: string): Promise<DocumentSnapshot<DocumentData> | undefined> {
-  const doc = await likes.doc(id).get()
-  if (!doc.exists) return undefined
-  return doc
-}
-
-export async function getPostDocs(): Promise<QueryDocumentSnapshot<DocumentData>[]> {
-  const res = await posts.get()
-  return res.docs
-}
+// export async function getPostDocs(): Promise<QueryDocumentSnapshot<DocumentData>[]> {
+//   const res = await posts.get()
+//   return res.docs
+// }
 
 export async function updateProfile(userId: string, data: {[key: string]: any}): Promise<DocumentData> {
   return await users.doc(userId).set(data, { merge: true })
 }
 
-export async function createPost(post: {[key: string]: any}): Promise<string> {
-  const postDoc: DocumentReference<DocumentData> = await posts.add(post)
-  return postDoc.id
-}
-
-export async function createLikes(id: string) {
-  await likes.doc(id).set({likedByIds: []})
-}
-
-export async function changeLike(likesId: string, userId: string): Promise<boolean> {
-  const likedByIds = await getLikesById(likesId)
-  if (!likedByIds) return false
-
-  if (likedByIds.includes(userId)) {
-    await likes.doc(likesId).update({
-      likedByIds: FieldValue.arrayRemove(userId)
-    })
-  }
-  else {
-    await likes.doc(likesId).update({
-      likedByIds: FieldValue.arrayUnion(userId)
-    })
-  }
-
-  return true
-}
+// export async function createPost(post: {[key: string]: any}): Promise<string> {
+//   const postDoc: DocumentReference<DocumentData> = await posts.add(post)
+//   return postDoc.id
+// }
