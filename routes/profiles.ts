@@ -28,7 +28,7 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
     
     // If new profile
     if (!await getProfileById(profileId)) {
-      req.body.followedBy = []
+      req.body.followers = []
       req.body.following = []
       req.body.posts = []
     }
@@ -51,8 +51,11 @@ router.get('/:profileId', async (req: Request<{profileId: string}>, res: Respons
 
     const profile: Profile | undefined = await getProfileById(profileId)
     if (!profile) res.status(404).send()
-    else res.json(profile)
-    
+    else {
+      console.log(profile)
+      res.json(profile)
+    } 
+
   } catch (err) {
     console.log(err)
     res.status(500).json({ message: err })
