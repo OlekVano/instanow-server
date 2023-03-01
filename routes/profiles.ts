@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import { requiredProfileKeys } from '../consts'
 import { updateProfile } from '../firebase-access'
 import { Profile } from '../types'
-import { getProfileById, requireAuthorization, uploadDataURL } from '../utils'
+import { addPostsToProfile, getProfileById, requireAuthorization, uploadDataURL } from '../utils'
 
 const router = express.Router()
 
@@ -30,7 +30,6 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
     if (!await getProfileById(profileId)) {
       req.body.followers = []
       req.body.following = []
-      req.body.posts = []
     }
 
     await updateProfile(userId, req.body)
@@ -43,6 +42,8 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
 })
 
 router.get('/:profileId', async (req: Request<{profileId: string}>, res: Response) => {
+  console.log('get')
+
   const { profileId } = req.params
 
   try {
@@ -52,8 +53,9 @@ router.get('/:profileId', async (req: Request<{profileId: string}>, res: Respons
     const profile: Profile | undefined = await getProfileById(profileId)
     if (!profile) res.status(404).send()
     else {
-      console.log(profile)
-      res.json(profile)
+      const profileWithPosts = await addPostsToProfile(profile)
+      console.log(profileWithPosts)
+      res.json(profileWithPosts)
     } 
 
   } catch (err) {

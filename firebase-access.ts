@@ -1,7 +1,7 @@
 import { Request } from 'express'
-import admin from 'firebase-admin'
+import admin, { firestore } from 'firebase-admin'
 import { getStorage } from 'firebase-admin/storage'
-import { DocumentSnapshot, DocumentData } from 'firebase-admin/firestore'
+import { DocumentSnapshot, DocumentData, DocumentReference } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
 
@@ -17,7 +17,7 @@ const app = admin.initializeApp({
 
 const db = app.firestore()
 const users = db.collection('users')
-// const posts = db.collection('posts')
+const posts = db.collection('posts')
 
 const storage = getStorage()
 const bucket = storage.bucket()
@@ -43,11 +43,11 @@ export async function getProfileDocById(id: string): Promise<DocumentSnapshot<Do
   return doc
 }
 
-// export async function getPostDocById(id: string): Promise<DocumentSnapshot<DocumentData> | undefined> {
-//   const doc = await posts.doc(id).get()
-//   if (!doc.exists) return undefined
-//   return doc
-// }
+export async function getPostDocById(id: string): Promise<DocumentSnapshot<DocumentData> | undefined> {
+  const doc = await posts.doc(id).get()
+  if (!doc.exists) return undefined
+  return doc
+}
 
 export function generateUniqueFileName(): string {
   return v4()
@@ -68,7 +68,19 @@ export async function updateProfile(userId: string, data: {[key: string]: any}):
   return await users.doc(userId).set(data, { merge: true })
 }
 
-// export async function createPost(post: {[key: string]: any}): Promise<string> {
-//   const postDoc: DocumentReference<DocumentData> = await posts.add(post)
-//   return postDoc.id
-// }
+export async function createPost(post: {[key: string]: any}): Promise<string> {
+  const postWithTimestamp = Object.assign({
+    createdAt: firestore.FieldValue.serverTimestamp()
+  }, post)
+  const postDoc: DocumentReference<DocumentData> = await posts.add(postWithTimestamp)
+  return postDoc.id
+}
+
+export async function getPostsOfUser(userId: string) {
+  const querySnapshot = await posts.where('authorId', '==', userId).get()
+  let userPosts: any[] = []
+  querySnapshot.forEach(doc => userPosts.push(Object.assign({
+    id: doc.id
+  }, doc.data())))
+  return userPosts
+}

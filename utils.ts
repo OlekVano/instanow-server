@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
-import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile } from './firebase-access'
-import { Profile } from './types'
+import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser } from './firebase-access'
+import { Post, Profile } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
   return Boolean(await getUserIdFromToken(token))
@@ -17,11 +17,11 @@ export async function getProfileById(id: string): Promise<Profile | undefined> {
   return addIdToDict(doc.data() as Exclude<Profile, {id: string}>, id) as Profile
 }
 
-// export async function getPostById(id: string): Promise<Post | undefined> {
-//   const doc = await getPostDocById(id)
-//   if (!doc) return undefined
-//   return addIdToDict(doc.data() as Exclude<Post, {id: string}>, id) as Post
-// }
+export async function getPostById(id: string): Promise<Post | undefined> {
+  const doc = await getPostDocById(id)
+  if (!doc) return undefined
+  return addIdToDict(doc.data() as Exclude<Post, {id: string}>, id) as Post
+}
 
 export async function uploadDataURL(dataUrl: string): Promise<string> {
   const [, extension, data] = dataUrl.match(/^data:.+\/(.+);base64,(.*)$/) as string[]
@@ -56,7 +56,14 @@ export async function requireAuthorization(req: Request, res: Response): Promise
 //   }
 // }
 
-// export async function addAuthorToPost(post: Post & {[key: string]: any}): Promise<Post & {author: Profile}> {
-//   post.author = await getProfileById(post.authorId)
-//   return post as Post & {author: Profile}
-// }
+export async function addAuthorToPost(post: Post & {[key: string]: any}): Promise<Post & {author: Profile}> {
+  return Object.assign({
+    author: await getProfileById(post.authorId) as Profile
+  }, post)
+}
+
+export async function addPostsToProfile(profile: Profile) {
+  return Object.assign({
+    posts: await getPostsOfUser(profile.id)
+  }, profile)
+}

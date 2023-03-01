@@ -8,7 +8,7 @@ import { config } from 'dotenv'
 config()
 
 import profilesRouter from './routes/profiles'
-// import postsRouter from './routes/posts'
+import postsRouter from './routes/posts'
 
 const corsOptions = {
   //origin: 'http://localhost:3000',
@@ -20,7 +20,7 @@ app.get('/test', cors(corsOptions), (_req: Request, res: Response) => {
 })
 
 app.use('/profiles', profilesRouter)
-// app.use('/posts', postsRouter)
+app.use('/posts', postsRouter)
 
 const port = process.env.PORT || 3001
 app.listen(port, async () => {
