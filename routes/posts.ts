@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express'
 import { requiredPostKeys } from '../consts'
-import { createPost } from '../firebase-access'
+import { addComment, createPost } from '../firebase-access'
 import { Post } from '../types'
-import { addAuthorToPost, getPostById, requireAuthorization, uploadDataURL } from '../utils'
+import { addAuthorsToComments, addAuthorToPost, getPostById, requireAuthorization, uploadDataURL } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
@@ -39,9 +39,11 @@ router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => 
     if (!userId) return
 
     const post: Post | undefined = await getPostById(postId)
+
     if (!post) res.status(404).send()
     else {
       const postWithAuthor = await addAuthorToPost(post)
+      postWithAuthor.comments = await addAuthorsToComments(postWithAuthor.comments)
       res.json(postWithAuthor)
     }
 
@@ -50,6 +52,30 @@ router.get('/:postId', async (req: Request<{postId: string}>, res: Response) => 
     res.status(500).json({message: err})
   }
 })
+
+router.post('/:postId/comment', async (req: Request<{postId: string}>, res: Response) => {
+  const { postId } = req.params
+
+  try {
+    const userId = await requireAuthorization(req, res)
+    if (!userId) return
+
+    if (!req.body.text) {
+      res.status(400).send()
+      return
+    }
+
+    const post: Post | undefined = await getPostById(postId)
+    if (!post) res.status(404).send()
+    else {
+      addComment(postId, userId, req.body.text)
+    }
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({message: err})
+  }
+})  
 
 // router.get('/', async (req: Request, res: Response) => {
 //   try {

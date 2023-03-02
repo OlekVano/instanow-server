@@ -1,7 +1,7 @@
 import { Request } from 'express'
 import admin, { firestore } from 'firebase-admin'
 import { getStorage } from 'firebase-admin/storage'
-import { DocumentSnapshot, DocumentData, DocumentReference } from 'firebase-admin/firestore'
+import { DocumentSnapshot, DocumentData, DocumentReference, FieldValue } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
 
@@ -83,4 +83,15 @@ export async function getPostsOfUser(userId: string) {
     id: doc.id
   }, doc.data())))
   return userPosts
+}
+
+export async function addComment(postId: string, authorId: string, text: string) {
+  await posts.doc(postId).update({
+    comments: FieldValue.arrayUnion({
+      authorId: authorId,
+      text: text,
+      comments: [],
+      likes: []
+    })
+  })
 }

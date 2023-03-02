@@ -16,6 +16,14 @@ export type Post = {
   text: string,
   authorId: string,
   likes: string[],
-  comments: [],
+  comments: Comment[],
   createdAt: Timestamp
 }
+
+export type Comment = {
+  text: string,
+  authorId: string,
+  comments: Comment[],
+}
+
+export type CommentWithAuthor = Comment & {author: Profile}

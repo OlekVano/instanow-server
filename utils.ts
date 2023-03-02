@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser } from './firebase-access'
-import { Post, Profile } from './types'
+import { Comment, CommentWithAuthor, Post, Profile } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
   return Boolean(await getUserIdFromToken(token))
@@ -66,4 +66,23 @@ export async function addPostsToProfile(profile: Profile) {
   return Object.assign({
     posts: await getPostsOfUser(profile.id)
   }, profile)
+}
+
+export async function addAuthorsToComments(comments: Comment[]): Promise<CommentWithAuthor[]> {
+  let commentsWithAuthors: CommentWithAuthor[] = []
+  for (let comment of comments) {
+    const commentWithAuthor = await addAuthorToComment(comment)
+    commentsWithAuthors.push(commentWithAuthor)
+  }
+  return commentsWithAuthors
+}
+
+export async function addAuthorToComment(comment: Comment): Promise<CommentWithAuthor> {
+  const author = await getProfileById(comment.authorId)
+  let commentWithAuthor = Object.assign({
+    author: author,
+  }, comment)
+  const commentsWithAuthors = await addAuthorsToComments(commentWithAuthor.comments)
+  commentWithAuthor.comments = commentsWithAuthors
+  return commentWithAuthor as CommentWithAuthor
 }

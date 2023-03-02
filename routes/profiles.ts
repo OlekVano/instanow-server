@@ -42,8 +42,6 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
 })
 
 router.get('/:profileId', async (req: Request<{profileId: string}>, res: Response) => {
-  console.log('get')
-
   const { profileId } = req.params
 
   try {
@@ -54,7 +52,6 @@ router.get('/:profileId', async (req: Request<{profileId: string}>, res: Respons
     if (!profile) res.status(404).send()
     else {
       const profileWithPosts = await addPostsToProfile(profile)
-      console.log(profileWithPosts)
       res.json(profileWithPosts)
     } 
 
