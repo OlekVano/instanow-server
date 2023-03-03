@@ -93,7 +93,6 @@ router.get('/', async (req: Request, res: Response) => {
     if (!userId) return
 
     const posts = await getPosts()
-    console.log(posts)
     res.json(posts)
     
   } catch (err) {
