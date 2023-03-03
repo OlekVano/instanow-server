@@ -1,9 +1,10 @@
 import { Request } from 'express'
-import admin, { firestore } from 'firebase-admin'
+import admin from 'firebase-admin'
 import { getStorage } from 'firebase-admin/storage'
-import { DocumentSnapshot, DocumentData, DocumentReference, FieldValue } from 'firebase-admin/firestore'
+import { DocumentSnapshot, DocumentData, DocumentReference } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
+import { PostWithoutId, Profile, WithComments } from './types'
 
 const app = admin.initializeApp({
   credential: admin.credential.cert({
@@ -64,13 +65,17 @@ export async function uploadFile(buffer: Buffer, extension: string): Promise<str
 //   return res.docs
 // }
 
-export async function updateProfile(userId: string, data: {[key: string]: any}): Promise<DocumentData> {
-  return await users.doc(userId).set(data, { merge: true })
+export async function updateProfile(userId: string, profile: Omit<Profile, 'id'>): Promise<DocumentData> {
+  return await users.doc(userId).set(profile, { merge: true })
+}
+
+export async function updatePost(postId: string, post: PostWithoutId) {
+  return await posts.doc(postId).set(post, { merge: true })
 }
 
 export async function createPost(post: {[key: string]: any}): Promise<string> {
   const postWithTimestamp = Object.assign({
-    createdAt: firestore.FieldValue.serverTimestamp()
+    createdAt: Date.now()
   }, post)
   const postDoc: DocumentReference<DocumentData> = await posts.add(postWithTimestamp)
   return postDoc.id
@@ -85,13 +90,18 @@ export async function getPostsOfUser(userId: string) {
   return userPosts
 }
 
-export async function addComment(postId: string, authorId: string, text: string) {
-  await posts.doc(postId).update({
-    comments: FieldValue.arrayUnion({
+export async function addComment(obj: WithComments, authorId: string, text: string, query: number[]) {
+  if (query.length === 0) {
+    obj.comments.push({
       authorId: authorId,
       text: text,
       comments: [],
-      likes: []
+      likes: [],
+      createdAt: Date.now()
     })
-  })
+  }
+  else {
+    await addComment(obj.comments[query[0]], authorId, text, query.slice(1))
+  }
+  return obj
 }

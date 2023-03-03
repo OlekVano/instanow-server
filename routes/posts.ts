@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import { requiredPostKeys } from '../consts'
-import { addComment, createPost } from '../firebase-access'
-import { Post } from '../types'
+import { addComment, createPost, updatePost } from '../firebase-access'
+import { Post, PostWithoutId } from '../types'
 import { addAuthorsToComments, addAuthorToPost, getPostById, requireAuthorization, uploadDataURL } from '../utils'
 const router = express.Router()
 
@@ -65,10 +65,20 @@ router.post('/:postId/comment', async (req: Request<{postId: string}>, res: Resp
       return
     }
 
-    const post: Post | undefined = await getPostById(postId)
+    if (!req.body.query) {
+      res.status(400).send()
+      return
+    }
+
+    let post: Post | undefined = await getPostById(postId)
     if (!post) res.status(404).send()
     else {
-      addComment(postId, userId, req.body.text)
+      post = await addComment(post, userId, req.body.text, req.body.query) as Post
+      const entries: [string, any][] = Object.entries(post)
+      const entriesWithoutId = entries.filter((entry) => entry[0] !== 'id')
+      const postWithoutId: PostWithoutId = Object.fromEntries(entriesWithoutId) as PostWithoutId
+      await updatePost(postId, postWithoutId)
+      res.status(200).send()
     }
 
   } catch (err) {
