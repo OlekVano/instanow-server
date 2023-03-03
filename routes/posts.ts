@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import { requiredPostKeys } from '../consts'
 import { addComment, createPost, updatePost } from '../firebase-access'
 import { Post, PostWithoutId } from '../types'
-import { addAuthorsToComments, addAuthorToPost, getPostById, requireAuthorization, uploadDataURL } from '../utils'
+import { addAuthorsToComments, addAuthorToPost, getPostById, getPosts, requireAuthorization, uploadDataURL } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {
@@ -87,26 +87,19 @@ router.post('/:postId/comment', async (req: Request<{postId: string}>, res: Resp
   }
 })  
 
-// router.get('/', async (req: Request, res: Response) => {
-//   try {
-//     const userId = await requireAuthorization(req, res)
-//     if (!userId) return
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const userId = await requireAuthorization(req, res)
+    if (!userId) return
 
-//     const posts = await getPosts()
-//     const postsWithLikesAndAuthor = await Promise.all(posts.map(addLikesAndAuthor))
-//     res.json(postsWithLikesAndAuthor)
-
-//     // ***************************
-
-//     async function addLikesAndAuthor(post: Post) {
-//       await addLikesToDict(post, userId as string)
-//       await addAuthorToPost(post)
-//       return post
-//     }
-//   } catch (err) {
-//     console.log(err)
-//     res.status(500).json({message: err})
-//   }
-// })
+    const posts = await getPosts()
+    console.log(posts)
+    res.json(posts)
+    
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({message: err})
+  }
+})
 
 export default router

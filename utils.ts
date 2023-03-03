@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
-import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser } from './firebase-access'
+import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
+import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs } from './firebase-access'
 import { Comment, CommentWithAuthor, Post, Profile } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
@@ -45,16 +46,29 @@ export async function requireAuthorization(req: Request, res: Response): Promise
   return userId
 }
 
-// export async function getPosts(): Promise<Post[]> {
-//   const postDocs = await getPostDocs()
-//   return postDocs.map(getPostFromDoc)
+export async function getPosts(): Promise<Post[]> {
+  const postDocs = await getPostDocs()
+  const posts = postDocs.map(getPostFromDoc)
+  let postsWithAuthors = await Promise.all(posts.map(addAuthorToPost))
+  postsWithAuthors = await Promise.all(postsWithAuthors.map(async function addAuthorsToPostComments(post) {
+    const commentsWithAuthors = await addAuthorsToComments(post.comments)
+    return Object.assign(
+      {},
+      post,
+      {
+        comments: commentsWithAuthors
+      }
+    )
+  }))
 
-//   // ***************************
+  return postsWithAuthors
 
-//   function getPostFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Post {
-//     return addIdToDict(doc.data() as Exclude<Post, {id: string}>, doc.id) as Post
-//   }
-// }
+  // ***************************
+
+  function getPostFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Post {
+    return addIdToDict(doc.data() as Exclude<Post, {id: string}>, doc.id) as Post
+  }
+}
 
 export async function addAuthorToPost(post: Post & {[key: string]: any}): Promise<Post & {author: Profile}> {
   return Object.assign({

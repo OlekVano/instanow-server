@@ -1,7 +1,7 @@
 import { Request } from 'express'
 import admin from 'firebase-admin'
 import { getStorage } from 'firebase-admin/storage'
-import { DocumentSnapshot, DocumentData, DocumentReference } from 'firebase-admin/firestore'
+import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
 import { PostWithoutId, Profile, WithComments } from './types'
@@ -60,10 +60,10 @@ export async function uploadFile(buffer: Buffer, extension: string): Promise<str
   return `${storageBucketPath}/o/${filename.replace(/\//g, '%2F')}?alt=media`
 }
 
-// export async function getPostDocs(): Promise<QueryDocumentSnapshot<DocumentData>[]> {
-//   const res = await posts.get()
-//   return res.docs
-// }
+export async function getPostDocs(): Promise<QueryDocumentSnapshot<DocumentData>[]> {
+  const res = await posts.get()
+  return res.docs
+}
 
 export async function updateProfile(userId: string, profile: Omit<Profile, 'id'>): Promise<DocumentData> {
   return await users.doc(userId).set(profile, { merge: true })
