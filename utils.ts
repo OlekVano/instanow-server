@@ -100,3 +100,10 @@ export async function addAuthorToComment(comment: Comment): Promise<CommentWithA
   commentWithAuthor.comments = commentsWithAuthors
   return commentWithAuthor as CommentWithAuthor
 }
+
+export function removeIdFromDict<T extends {id: any}>(dict: T): Omit<T, 'id'> {
+  const entries: [string, any][] = Object.entries(dict)
+  const entriesWithoutId = entries.filter((entry) => entry[0] !== 'id')
+  const dictWithoutId = Object.fromEntries(entriesWithoutId) as Omit<T, 'id'>
+  return dictWithoutId
+}

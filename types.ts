@@ -32,4 +32,6 @@ export type CommentWithAuthor = Comment & {author: Profile}
 
 export type WithComments = {comments: Comment[]} & {[key: string]: any}
 
+export type WithLikes = {likes: string[]} & {[key: string] : any}
+
 type ForcefullyOmit<T, K extends keyof T> = Omit<T, K> & Partial<Record<K, never>>;

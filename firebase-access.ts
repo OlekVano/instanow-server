@@ -4,7 +4,7 @@ import { getStorage } from 'firebase-admin/storage'
 import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
-import { PostWithoutId, Profile, WithComments } from './types'
+import { PostWithoutId, Profile, WithComments, WithLikes } from './types'
 
 const app = admin.initializeApp({
   credential: admin.credential.cert({
@@ -102,6 +102,28 @@ export async function addComment(obj: WithComments, authorId: string, text: stri
   }
   else {
     await addComment(obj.comments[query[0]], authorId, text, query.slice(1))
+  }
+  return obj
+}
+
+export async function addLike(obj: WithLikes, authorId: string, query: number[]) {
+  if (query.length === 0) {
+    if (obj.likes.includes(authorId)) return obj
+    obj.likes.push(authorId)
+  }
+  else {
+    await addLike(obj.comments[query[0]], authorId, query.slice(1))
+  }
+  return obj
+}
+
+export async function removeLike(obj: WithLikes, authorId: string, query: number[]) {
+  if (query.length === 0) {
+    if (!obj.likes.includes(authorId)) return obj
+    obj.likes.push(authorId)
+  }
+  else {
+    await addLike(obj.comments[query[0]], authorId, query.slice(1))
   }
   return obj
 }
