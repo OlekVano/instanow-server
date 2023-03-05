@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express'
 import { requiredPostKeys } from '../consts'
-import { addComment, addLike, createPost, removeLike, updatePost } from '../firebase-access'
+import { createPost, updatePost } from '../firebase-access'
 import { Post, PostWithoutId } from '../types'
-import { addAuthorsToComments, addAuthorToPost, getPostById, getPosts, removeIdFromDict, requireAuthorization, uploadDataURL } from '../utils'
+import { addAuthorsToComments, addAuthorToPost, addComment, addLike, getPostById, getPosts, removeIdFromDict, removeLike, requireAuthorization, uploadDataURL } from '../utils'
 const router = express.Router()
 
 router.post('/', async (req: Request, res: Response) => {

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
 import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs } from './firebase-access'
-import { Comment, CommentWithAuthor, Post, Profile } from './types'
+import { Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
   return Boolean(await getUserIdFromToken(token))
@@ -106,4 +106,42 @@ export function removeIdFromDict<T extends {id: any}>(dict: T): Omit<T, 'id'> {
   const entriesWithoutId = entries.filter((entry) => entry[0] !== 'id')
   const dictWithoutId = Object.fromEntries(entriesWithoutId) as Omit<T, 'id'>
   return dictWithoutId
+}
+
+export async function addComment(obj: WithComments, authorId: string, text: string, query: number[]) {
+  if (query.length === 0) {
+    obj.comments.push({
+      authorId: authorId,
+      text: text,
+      comments: [],
+      likes: [],
+      createdAt: Date.now()
+    })
+  }
+  else {
+    await addComment(obj.comments[query[0]], authorId, text, query.slice(1))
+  }
+  return obj
+}
+
+export async function addLike(obj: WithLikes, authorId: string, query: number[]) {
+  if (query.length === 0) {
+    if (obj.likes.includes(authorId)) return obj
+    obj.likes.push(authorId)
+  }
+  else {
+    await addLike(obj.comments[query[0]], authorId, query.slice(1))
+  }
+  return obj
+}
+
+export async function removeLike(obj: WithLikes, authorId: string, query: number[]) {
+  if (query.length === 0) {
+    if (!obj.likes.includes(authorId)) return obj
+    obj.likes.push(authorId)
+  }
+  else {
+    await addLike(obj.comments[query[0]], authorId, query.slice(1))
+  }
+  return obj
 }
