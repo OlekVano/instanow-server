@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express'
 import { requiredProfileKeys } from '../consts'
-import { updateProfile } from '../firebase-access'
+import { getFollowedProfiles, updateProfile } from '../firebase-access'
 import { Profile } from '../types'
-import { addPostsToProfile, getProfileById, requireAuthorization, uploadDataURL } from '../utils'
+import { addPostsToProfile, follow, getProfileById, requireAuthorization, unfollow, uploadDataURL } from '../utils'
 
 const router = express.Router()
 
@@ -28,13 +28,58 @@ router.post('/:profileId', async (req: Request<{profileId: string}>, res: Respon
     
     // If new profile
     if (!await getProfileById(profileId)) {
-      req.body.followers = []
-      req.body.following = []
+      req.body.followersIds = []
+      req.body.followingIds = []
     }
 
     await updateProfile(userId, req.body)
 
     res.status(200).send()
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: err })
+  }
+})
+
+router.post('/:profileId/follow', async (req: Request<{profileId: string}>, res: Response) => {
+  const { profileId } = req.params
+
+  try {
+    const userId: string | undefined = await requireAuthorization(req, res)
+    if (!userId) return
+
+    if (await follow(userId, profileId)) res.status(200).send()
+    else res.status(404).send()
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: err })
+  }
+})
+
+router.post('/:profileId/unfollow', async (req: Request<{profileId: string}>, res: Response) => {
+  const { profileId } = req.params
+
+  try {
+    const userId: string | undefined = await requireAuthorization(req, res)
+    if (!userId) return
+
+    if (await unfollow(userId, profileId)) res.status(200).send()
+    else res.status(404).send()
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: err })
+  }
+})
+
+router.get('/following', async (req: Request, res: Response) => {
+  try {
+    const userId = await requireAuthorization(req, res)
+    if (!userId) return
+
+    const followedProfiles = await getFollowedProfiles(userId)
+    res.json(followedProfiles)
   } catch (err) {
     console.log(err)
     res.status(500).json({ message: err })

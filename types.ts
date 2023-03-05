@@ -4,8 +4,8 @@ export type Profile = {
   username: string,
   tag: string,
   bio: string,
-  followers: string[],
-  following: string[],
+  followersIds: string[],
+  followingIds: string[],
 }
 
 export type Post = {

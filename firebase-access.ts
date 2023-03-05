@@ -1,7 +1,7 @@
 import { Request } from 'express'
 import admin from 'firebase-admin'
 import { getStorage } from 'firebase-admin/storage'
-import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot } from 'firebase-admin/firestore'
+import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot, FieldValue } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
 import { PostWithoutId, Profile } from './types'
@@ -88,4 +88,37 @@ export async function getPostsOfUser(userId: string) {
     id: doc.id
   }, doc.data())))
   return userPosts
+}
+
+export async function getFollowedProfiles(userId: string): Promise<Profile[]> {
+  const querySnapshot = await users.where('followersIds', 'array-contains', userId).get()
+  let followedProfiles: Profile[] = []
+  querySnapshot.forEach(doc => followedProfiles.push(Object.assign({
+    id: doc.id
+  }, doc.data()) as Exclude<Profile, {id: string}>))
+  return followedProfiles
+}
+
+export async function addFollowing(userId: string, userIdToFollow: string) {
+  await users.doc(userId).update({
+    followingIds: FieldValue.arrayUnion(userIdToFollow)
+  })
+}
+
+export async function addFollower(userId: string, followerId: string) {
+  await users.doc(userId).update({
+    followersIds: FieldValue.arrayUnion(followerId)
+  })
+}
+
+export async function removeFollowing(userId: string, userIdToUnfollow: string) {
+  await users.doc(userId).update({
+    followingIds: FieldValue.arrayRemove(userIdToUnfollow)
+  })
+}
+
+export async function removeFollower(userId: string, followerId: string) {
+  await users.doc(userId).update({
+    followersIds: FieldValue.arrayRemove(followerId)
+  })
 }

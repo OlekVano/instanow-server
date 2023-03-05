@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
-import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs } from './firebase-access'
+import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing } from './firebase-access'
 import { Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
@@ -144,4 +144,24 @@ export async function removeLike(obj: WithLikes, authorId: string, query: number
     await addLike(obj.comments[query[0]], authorId, query.slice(1))
   }
   return obj
+}
+
+export async function follow(userId: string, userIdToFollow: string) {
+  let user = await getProfileById(userId)
+  if (user?.followingIds.includes(userIdToFollow)) return false
+
+  await addFollowing(userId, userIdToFollow)
+  await addFollower(userIdToFollow, userId)
+
+  return true
+}
+
+export async function unfollow(userId: string, userIdToUnfollow: string) {
+  let user = await getProfileById(userId)
+  if (!user?.followingIds.includes(userIdToUnfollow)) return false
+
+  await removeFollowing(userId, userIdToUnfollow)
+  await removeFollower(userIdToUnfollow, userId)
+
+  return true
 }
