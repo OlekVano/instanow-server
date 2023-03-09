@@ -4,7 +4,7 @@ import { getStorage } from 'firebase-admin/storage'
 import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot, FieldValue } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
-import { PostWithoutId, Profile } from './types'
+import { ChatWithoutId, PostWithoutId, Profile } from './types'
 
 const app = admin.initializeApp({
   credential: admin.credential.cert({
@@ -19,6 +19,7 @@ const app = admin.initializeApp({
 const db = app.firestore()
 const users = db.collection('users')
 const posts = db.collection('posts')
+const chats = db.collection('chats')
 
 const storage = getStorage()
 const bucket = storage.bucket()
@@ -43,6 +44,17 @@ export async function getProfileDocById(id: string): Promise<DocumentSnapshot<Do
   if (!doc.exists) return undefined
   return doc
 }
+
+export async function getChatDocsById(id: string): Promise<QueryDocumentSnapshot<DocumentData>[]> {
+  const res = await chats.where('userIds', 'array-contains', id).get()
+  return res.docs
+}
+
+// export async function getChatDocByIds(ids: string[]): Promise<DocumentSnapshot<DocumentData> | undefined> {
+//   const doc = await chats.where('ids', '')
+//   if (!doc.exists) return undefined
+//   return doc
+// }
 
 export async function getPostDocById(id: string): Promise<DocumentSnapshot<DocumentData> | undefined> {
   const doc = await posts.doc(id).get()
@@ -71,6 +83,11 @@ export async function updateProfile(userId: string, profile: Omit<Profile, 'id'>
 
 export async function updatePost(postId: string, post: PostWithoutId) {
   return await posts.doc(postId).set(post, { merge: true })
+}
+
+export async function addChat(chat: ChatWithoutId): Promise<string> {
+  const addedChat = await chats.add(chat)
+  return addedChat.id
 }
 
 export async function createPost(post: {[key: string]: any}): Promise<string> {

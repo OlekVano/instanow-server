@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
-import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing } from './firebase-access'
-import { Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
+import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing, getChatDocsById, addChat } from './firebase-access'
+import { Chat, ChatWithoutId, ChatWithUser, Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
   return Boolean(await getUserIdFromToken(token))
@@ -24,6 +24,28 @@ export async function getPostById(id: string): Promise<Post | undefined> {
   return addIdToDict(doc.data() as Exclude<Post, {id: string}>, id) as Post
 }
 
+export async function getChatByIds(id1: string, id2: string): Promise<Chat> {
+  const chats = await getChats(id1)
+  const mutualChats = chats.filter(filterChat)
+
+  if (mutualChats.length !== 0) return mutualChats[0]
+
+  const emptyChat: ChatWithoutId = {
+    userIds: [id1, id2],
+    messages: []
+  }
+
+  const chatId = await addChat(emptyChat)
+
+  return addIdToDict(emptyChat, chatId) as Chat
+  
+  // *********************************
+
+  function filterChat(chat: Chat) {
+    return chat.userIds.includes(id2)
+  }
+}
+
 export async function uploadDataURL(dataUrl: string): Promise<string> {
   const [, extension, data] = dataUrl.match(/^data:.+\/(.+);base64,(.*)$/) as string[]
   const buffer = Buffer.from(data, 'base64')
@@ -44,6 +66,18 @@ export async function requireAuthorization(req: Request, res: Response): Promise
   }
   
   return userId
+}
+
+export async function getChats(userId: string): Promise<ChatWithUser[]> {
+  const chatDocs = await getChatDocsById(userId)
+  const chats = await Promise.all(chatDocs.map(getChatFromDoc))
+  return chats
+
+  // ***************************
+
+  async function getChatFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Promise<ChatWithUser> {
+    return await addUserToChat(addIdToDict(doc.data() as Exclude<Post, {id: string}>, doc.id) as Chat, userId) 
+  }
 }
 
 export async function getPosts(): Promise<Post[]> {
@@ -101,10 +135,24 @@ export async function addAuthorToComment(comment: Comment): Promise<CommentWithA
   return commentWithAuthor as CommentWithAuthor
 }
 
-export function removeIdFromDict<T extends {id: any}>(dict: T): Omit<T, 'id'> {
+export async function addUserToChat(chat: Chat, currUserId: string): Promise<ChatWithUser> {
+  const user = await getProfileById(chat.userIds.filter(filterUserId)[0]) as Profile
+  const chatWithUser: ChatWithUser = Object.assign({
+    user: user,
+  }, chat)
+  return chatWithUser
+
+  // ***************************
+
+  function filterUserId(userId: string) {
+    return userId !== currUserId
+  }
+}
+
+export function removeIdFromDict<T extends {id: any}>(dict: T): Exclude<T, {id: any}> {
   const entries: [string, any][] = Object.entries(dict)
   const entriesWithoutId = entries.filter((entry) => entry[0] !== 'id')
-  const dictWithoutId = Object.fromEntries(entriesWithoutId) as Omit<T, 'id'>
+  const dictWithoutId = Object.fromEntries(entriesWithoutId) as Exclude<T, {id: any}>
   return dictWithoutId
 }
 

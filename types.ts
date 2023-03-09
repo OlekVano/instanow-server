@@ -34,4 +34,21 @@ export type WithComments = {comments: Comment[]} & {[key: string]: any}
 
 export type WithLikes = {likes: string[]} & {[key: string] : any}
 
-type ForcefullyOmit<T, K extends keyof T> = Omit<T, K> & Partial<Record<K, never>>;
+type ForcefullyOmit<T, K extends keyof T> = Omit<T, K> & Partial<Record<K, never>>
+
+export type Chat = {
+  id: string,
+  userIds: string[],
+  messages: Message[]
+}
+
+export type ChatWithUser = Chat & {user: Profile}
+
+export type Message = {
+  authorId: string,
+  read: boolean,
+  text: string,
+  image: string
+}
+
+export type ChatWithoutId = ForcefullyOmit<Chat, 'id'>
