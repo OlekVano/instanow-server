@@ -25,7 +25,8 @@ export async function getPostById(id: string): Promise<Post | undefined> {
 }
 
 export async function uploadDataURL(dataUrl: string): Promise<string> {
-  const [, extension, data] = dataUrl.match(/^data:.+\/(.+);base64,(.*)$/) as string[]
+  const [, extension, ] = dataUrl.substring(0, 50).match(/^data:.+\/(.+);base64,(.*)$/) as string[]
+  const data = dataUrl.substring(dataUrl.indexOf(',') + 1)
   const buffer = Buffer.from(data, 'base64')
   return await uploadFile(buffer, extension)
 }
