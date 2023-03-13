@@ -4,7 +4,7 @@ import { getStorage } from 'firebase-admin/storage'
 import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot, FieldValue } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
-import { PostWithoutId, Profile } from './types'
+import { Post, PostWithoutId, Profile } from './types'
 
 const app = admin.initializeApp({
   credential: admin.credential.cert({
@@ -81,7 +81,7 @@ export async function createPost(post: {[key: string]: any}): Promise<string> {
   return postDoc.id
 }
 
-export async function getPostsOfUser(userId: string) {
+export async function getPostsOfUser(userId: string): Promise<Post[]> {
   const querySnapshot = await posts.where('authorId', '==', userId).get()
   let userPosts: any[] = []
   querySnapshot.forEach(doc => userPosts.push(Object.assign({

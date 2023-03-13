@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import { requiredProfileKeys } from '../consts'
 import { getFollowedProfiles, updateProfile } from '../firebase-access'
 import { Profile } from '../types'
-import { addPostsToProfile, follow, getProfileById, requireAuthorization, unfollow, uploadDataURL } from '../utils'
+import { addAuthorsToComments, addPostsToProfile, follow, getProfileById, requireAuthorization, unfollow, uploadDataURL } from '../utils'
 
 const router = express.Router()
 
@@ -96,7 +96,15 @@ router.get('/:profileId', async (req: Request<{profileId: string}>, res: Respons
     const profile: Profile | undefined = await getProfileById(profileId)
     if (!profile) res.status(404).send()
     else {
-      const profileWithPosts = await addPostsToProfile(profile)
+      let profileWithPosts = await addPostsToProfile(profile)
+      profileWithPosts.posts = await Promise.all(
+        profileWithPosts.posts.map(
+          async function mapPost(post) {
+            post.comments = await addAuthorsToComments(post.comments)
+            return post
+          }
+        )
+      )
       res.json(profileWithPosts)
     } 
 
