@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
-import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing } from './firebase-access'
+import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing, getProfileDocs } from './firebase-access'
 import { Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
@@ -68,6 +68,19 @@ export async function getPosts(): Promise<Post[]> {
 
   function getPostFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Post {
     return addIdToDict(doc.data() as Exclude<Post, {id: string}>, doc.id) as Post
+  }
+}
+
+export async function getProfiles(): Promise<Profile[]> {
+  const profileDocs = await getProfileDocs()
+  const profiles = profileDocs.map(getProfileFromDoc)
+
+  return profiles
+
+  // ***************************
+
+  function getProfileFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Profile {
+    return addIdToDict(doc.data() as Exclude<Post, {id: string}>, doc.id) as Profile
   }
 }
 

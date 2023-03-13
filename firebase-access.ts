@@ -65,6 +65,11 @@ export async function getPostDocs(): Promise<QueryDocumentSnapshot<DocumentData>
   return res.docs
 }
 
+export async function getProfileDocs(): Promise<QueryDocumentSnapshot<DocumentData>[]> {
+  const res = await users.get()
+  return res.docs
+}
+
 export async function updateProfile(userId: string, profile: Omit<Profile, 'id'>): Promise<DocumentData> {
   return await users.doc(userId).set(profile, { merge: true })
 }
