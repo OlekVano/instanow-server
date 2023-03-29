@@ -1,4 +1,4 @@
-import { Post, Profile } from './types'
+import { Post, Profile, Message } from './types'
 
 export const requiredProfileKeys: (keyof Profile)[] = [
   'username',
@@ -10,6 +10,11 @@ export const requiredProfileKeys: (keyof Profile)[] = [
 export const requiredPostKeys: (keyof Post)[] = [
   'picture',
   'text'
+]
+
+export const requiredMessageKeys: (keyof Message)[] = [
+  'image',
+  'text',
 ]
 
 //https://firebasestorage.googleapis.com/v0/b/{**BUCKET**}/o/{**PATH**}?alt=media

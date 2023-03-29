@@ -4,7 +4,7 @@ import { getStorage } from 'firebase-admin/storage'
 import { DocumentSnapshot, DocumentData, DocumentReference, QueryDocumentSnapshot, FieldValue } from 'firebase-admin/firestore'
 import { v4 } from 'uuid'
 import { storageBucketPath } from './consts'
-import { Post, PostWithoutId, Profile } from './types'
+import { ChatWithoutId, Post, PostWithoutId, Profile } from './types'
 
 const app = admin.initializeApp({
   credential: admin.credential.cert({
@@ -19,6 +19,7 @@ const app = admin.initializeApp({
 const db = app.firestore()
 const users = db.collection('users')
 const posts = db.collection('posts')
+const chats = db.collection('chats')
 
 const storage = getStorage()
 const bucket = storage.bucket()
@@ -86,6 +87,17 @@ export async function createPost(post: {[key: string]: any}): Promise<string> {
   return postDoc.id
 }
 
+export async function addMessage(message: {[key: string]: any}, chatId: string) {
+  console.log(message)
+  const messageWithTimestamp = Object.assign({
+    sentAt: Date.now()
+  }, message)
+  console.log(chatId)
+  chats.doc(chatId).update({
+    messages: FieldValue.arrayUnion(messageWithTimestamp)
+  })
+}
+
 export async function getPostsOfUser(userId: string): Promise<Post[]> {
   const querySnapshot = await posts.where('authorId', '==', userId).get()
   let userPosts: any[] = []
@@ -126,4 +138,14 @@ export async function removeFollower(userId: string, followerId: string) {
   await users.doc(userId).update({
     followersIds: FieldValue.arrayRemove(followerId)
   })
+}
+
+export async function addChat(chat: ChatWithoutId): Promise<string> {
+  const addedChat = await chats.add(chat)
+  return addedChat.id
+}
+
+export async function getChatDocsById(id: string): Promise<QueryDocumentSnapshot<DocumentData>[]> {
+  const res = await chats.where('userIds', 'array-contains', id).get()
+  return res.docs
 }

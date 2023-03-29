@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
-import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing, getProfileDocs } from './firebase-access'
-import { Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
+import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing, getProfileDocs, addChat, getChatDocsById } from './firebase-access'
+import { Chat, ChatWithoutId, ChatWithUser, Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
   return Boolean(await getUserIdFromToken(token))
@@ -178,4 +178,52 @@ export async function unfollow(userId: string, userIdToUnfollow: string) {
   await removeFollower(userIdToUnfollow, userId)
 
   return true
+}
+
+export async function getChatByIds(userId: string, currUserId: string): Promise<ChatWithUser> {
+  const chats = await getChats(currUserId)
+  const mutualChats = chats.filter(filterChat)
+
+  if (mutualChats.length !== 0) return mutualChats[0]
+
+  const emptyChat: ChatWithoutId = {
+    userIds: [userId, currUserId],
+    messages: []
+  }
+
+  const chatId = await addChat(emptyChat)
+
+  return await addUserToChat(addIdToDict(emptyChat, chatId) as Chat, userId)
+  
+  // *********************************
+
+  function filterChat(chat: Chat) {
+    return chat.userIds.includes(userId)
+  }
+}
+
+export async function getChats(userId: string): Promise<ChatWithUser[]> {
+  const chatDocs = await getChatDocsById(userId)
+  const chats = await Promise.all(chatDocs.map(getChatFromDoc))
+  return chats
+
+  // ***************************
+
+  async function getChatFromDoc(doc: QueryDocumentSnapshot<DocumentData>): Promise<ChatWithUser> {
+    return await addUserToChat(addIdToDict(doc.data() as Exclude<Post, {id: string}>, doc.id) as Chat, userId) 
+  }
+}
+
+export async function addUserToChat(chat: Chat, currUserId: string): Promise<ChatWithUser> {
+  const user = await getProfileById(chat.userIds.filter(filterUserId)[0]) as Profile
+  const chatWithUser: ChatWithUser = Object.assign({
+    user: user,
+  }, chat)
+  return chatWithUser
+
+  // ***************************
+
+  function filterUserId(userId: string) {
+    return userId !== currUserId
+  }
 }
