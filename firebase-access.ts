@@ -51,6 +51,12 @@ export async function getPostDocById(id: string): Promise<DocumentSnapshot<Docum
   return doc
 }
 
+export async function getChatDocById(id: string): Promise<DocumentSnapshot<DocumentData> | undefined> {
+  const doc = await chats.doc(id).get()
+  if (!doc.exists) return undefined
+  return doc
+}
+
 export function generateUniqueFileName(): string {
   return v4()
 }
@@ -88,11 +94,9 @@ export async function createPost(post: {[key: string]: any}): Promise<string> {
 }
 
 export async function addMessage(message: {[key: string]: any}, chatId: string) {
-  console.log(message)
   const messageWithTimestamp = Object.assign({
     sentAt: Date.now()
   }, message)
-  console.log(chatId)
   chats.doc(chatId).update({
     messages: FieldValue.arrayUnion(messageWithTimestamp)
   })

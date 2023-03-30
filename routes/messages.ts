@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express'
 import { requiredMessageKeys } from '../consts'
 import { addMessage } from '../firebase-access'
-import { requireAuthorization, getChats, getChatByIds } from '../utils'
+import { Message } from '../types'
+import { requireAuthorization, getChats, getChatByIds, getChatById } from '../utils'
+import { sendMessage } from '../websocket-manager'
 const router = express.Router()
 
 router.post('/:chatId', async (req: Request, res: Response) => {
-  console.log('body1', req.body)
   const { chatId } = req.params
 
   const currUserId = await requireAuthorization(req, res)
@@ -18,13 +19,17 @@ router.post('/:chatId', async (req: Request, res: Response) => {
       return
     }
     
+    const message: Message = Object.assign({
+      authorId: currUserId,
+      read: false
+    }, req.body)
+
     await addMessage(
-      Object.assign({
-        authorId: currUserId,
-        read: false
-      }, req.body),
+      message,
       chatId
     )
+
+    sendMessage((await getChatById(chatId))?.userIds.find(function findUserId(id) {return id !== currUserId}) as string, message)
 
     res.status(200).send()
   } catch (err) {

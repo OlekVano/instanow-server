@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore'
-import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing, getProfileDocs, addChat, getChatDocsById } from './firebase-access'
+import { getUserIdFromToken, getProfileDocById, getTokenFromReq, uploadFile, getPostDocById, getPostsOfUser, getPostDocs, addFollower, addFollowing, removeFollower, removeFollowing, getProfileDocs, addChat, getChatDocsById, getChatDocById } from './firebase-access'
 import { Chat, ChatWithoutId, ChatWithUser, Comment, CommentWithAuthor, Post, Profile, WithComments, WithLikes } from './types'
 
 export async function validateToken(token: string): Promise<boolean> {
@@ -178,6 +178,12 @@ export async function unfollow(userId: string, userIdToUnfollow: string) {
   await removeFollower(userIdToUnfollow, userId)
 
   return true
+}
+
+export async function getChatById(id: string): Promise<Chat | undefined> {
+  const doc = await getChatDocById(id)
+  if (!doc) return undefined
+  return addIdToDict(doc.data() as Exclude<Post, {id: string}>, id) as Chat
 }
 
 export async function getChatByIds(userId: string, currUserId: string): Promise<ChatWithUser> {
