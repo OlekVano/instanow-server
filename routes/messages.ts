@@ -9,13 +9,10 @@ const router = express.Router()
 router.post('/:chatId/read', async (req: Request, res: Response) => {
   const { chatId } = req.params
 
-  console.log('READ')
-
   const currUserId = await requireAuthorization(req, res)
 
   try {
     let chat = await getChatById(chatId)
-    console.log('chat', chat)
     if (!chat) {
       res.status(400).send()
       return
