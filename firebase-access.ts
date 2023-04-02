@@ -85,6 +85,10 @@ export async function updatePost(postId: string, post: PostWithoutId) {
   return await posts.doc(postId).set(post, { merge: true })
 }
 
+export async function updateChat(chatId: string, chat: ChatWithoutId) {
+  return await chats.doc(chatId).set(chat, { merge: true })
+}
+
 export async function createPost(post: {[key: string]: any}): Promise<string> {
   const postWithTimestamp = Object.assign({
     createdAt: Date.now()

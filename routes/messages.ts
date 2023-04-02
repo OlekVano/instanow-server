@@ -1,10 +1,37 @@
 import express, { Request, Response } from 'express'
 import { requiredMessageKeys } from '../consts'
-import { addMessage } from '../firebase-access'
+import { addMessage, updateChat } from '../firebase-access'
 import { Message } from '../types'
-import { requireAuthorization, getChats, getChatByIds, getChatById } from '../utils'
+import { requireAuthorization, getChats, getChatByIds, getChatById, removeIdFromDict } from '../utils'
 import { sendMessage } from '../websocket-manager'
 const router = express.Router()
+
+router.post('/:chatId/read', async (req: Request, res: Response) => {
+  const { chatId } = req.params
+
+  console.log('READ')
+
+  const currUserId = await requireAuthorization(req, res)
+
+  try {
+    let chat = await getChatById(chatId)
+    console.log('chat', chat)
+    if (!chat) {
+      res.status(400).send()
+      return
+    }
+
+    if (chat.messages[chat.messages.length - 1].authorId !== currUserId) {
+      chat.messages[chat.messages.length -1].read = true
+      await updateChat(chat.id, removeIdFromDict(chat))
+    }
+
+    res.status(200).send()
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({message: err})
+  }
+})
 
 router.post('/:chatId', async (req: Request, res: Response) => {
   const { chatId } = req.params
