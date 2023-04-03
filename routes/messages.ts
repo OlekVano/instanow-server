@@ -18,8 +18,10 @@ router.post('/:chatId/read', async (req: Request, res: Response) => {
       return
     }
 
+    if (!chat.messages[0]) return
+
     if (chat.messages[chat.messages.length - 1].authorId !== currUserId) {
-      chat.messages[chat.messages.length -1].read = true
+      chat.messages[chat.messages.length - 1].read = true
       await updateChat(chat.id, removeIdFromDict(chat))
     }
 
