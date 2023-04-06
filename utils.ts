@@ -152,10 +152,11 @@ export async function addLike(obj: WithLikes, authorId: string, query: number[])
 export async function removeLike(obj: WithLikes, authorId: string, query: number[]) {
   if (query.length === 0) {
     if (!obj.likes.includes(authorId)) return obj
-    obj.likes.push(authorId)
+    // obj.likes.push(authorId)
+    obj.likes.splice(obj.likes.indexOf(authorId), 1)
   }
   else {
-    await addLike(obj.comments[query[0]], authorId, query.slice(1))
+    await removeLike(obj.comments[query[0]], authorId, query.slice(1))
   }
   return obj
 }
