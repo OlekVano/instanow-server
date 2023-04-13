@@ -2,9 +2,10 @@
 
 This social media project is designed to allow users to connect and share with others online. It consists of two Github repositories, one for the front end and one for the back end. The front end is built using React, SCSS, and Fuse.js, while the back end uses Express and Firebase. Both front end and back end are written in Typescript.
 
-## Repositories
+## Links
 * Front end - https://github.com/OlekVano/instanow
 * Back end - https://github.com/OlekVano/instanow-server
+* Live demo - https://instanow-client.netlify.app
 
 ## Features
 
